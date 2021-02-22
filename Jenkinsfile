@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        //be sure to replace "willbla" with your own Docker Hub username
+        //be sure to replace "ncodeitdocker" with your own Docker Hub username
         DOCKER_IMAGE_NAME = "ncodeitdocker/train-schedule"
     }
     stages {
@@ -15,9 +15,9 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    app = docker.build("${DOCKER_IMAGE_NAME}")
+                    app = docker.build(DOCKER_IMAGE_NAME)
                     app.inside {
-                        sh 'echo Hello, World!123'
+                        sh 'echo Hello, World!'
                     }
                 }
             }
@@ -30,6 +30,20 @@ pipeline {
                         app.push("latest")
                     }
                 }
+            }
+        }
+        stage('DeployToProduction') {
+            when {
+                branch 'master'
+            }
+            steps {
+                input 'Deploy to Production?'
+                milestone(1)
+                kubernetesDeploy(
+                    kubeconfigId: 'kubeconfig',
+                    configs: 'train-schedule-kube.yml',
+                    enableConfigSubstitution: true
+                )
             }
         }
     }
